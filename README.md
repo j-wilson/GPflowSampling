@@ -19,7 +19,7 @@ model = gpflow.model.GPR(...)
 sampler = location_scale(model, model.kernel, sample_shape=[...], full_cov=True)
 ```
 
-**Random Fourier features** are currently available Matérn kernels, e.g. `<Matern52>` and `<SquaredExponential>`.
+**Random Fourier features** are currently available for Matérn kernels, e.g. `<Matern52>` and `<SquaredExponential>`.
 ```
 from gpflow_sampling.utils import RandomFourierBasis
 kernel = gpflow.kernels.Matern52()
