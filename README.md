@@ -27,7 +27,7 @@ rff = RandomFourierBasis(kernel, num_basis=1024)
 ```
 
 
-Naïve **Fourier-feature-based sampling** is provided for `<<gpflow.model.GPR>`.
+Naïve **Fourier-feature-based sampling** is provided for `<gpflow.model.GPR>`.
 ```
 from gpflow_sampling.samplers import finite_fourier
 model = gpflow.model.GPR(...)
