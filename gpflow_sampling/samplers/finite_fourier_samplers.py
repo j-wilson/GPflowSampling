@@ -56,7 +56,7 @@ def _finite_fourier_gpr(model: gpflow.models.GPR,
     return tf.cast(weights, dtype)
 
   weight_shape = list(sample_shape) + [1, num_basis]
-  weights = tf.Variable(initializer(weight_shape, dtype), trainable=False)
+  weights = initializer(weight_shape, dtype)
   return BayesianLinearSampler(basis=basis,
                                weights=weights,
                                mean_function=model.mean_function,

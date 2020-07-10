@@ -8,7 +8,7 @@
 import tensorflow as tf
 
 from abc import abstractmethod
-from typing import List, Callable
+from typing import List, Callable, Union
 
 # ---- Exports
 __all__ = (
@@ -64,7 +64,7 @@ class CompositeSampler(tf.Module):
 
 class BayesianLinearSampler(Sampler):
   def __init__(self,
-               weights: tf.Variable,
+               weights: Union[tf.Tensor, tf.Variable],
                basis: Callable = None,
                mean_function: Callable = None,
                weight_initializer: Callable = None,
@@ -91,5 +91,10 @@ class BayesianLinearSampler(Sampler):
     if reset_basis:
       self.basis.reset_random_variables(*args, **kwargs)
 
-    self.weights.assign(self.weight_initializer(shape=self.weights.shape,
-                                                dtype=self.weights.dtype))
+    new_weights = self.weight_initializer(shape=self.weights.shape,
+                                          dtype=self.weights.dtype)
+
+    if isinstance(self.weights, tf.Variable):
+      self.weights.assign(new_weights)
+    else:
+      self.weights = new_weights

@@ -44,7 +44,7 @@ def _decoupled_sampler_gpr(model: gpflow.models.GPR,
     def w_init(shape, dtype=dtype):
       return tf.random.normal(shape=shape, dtype=dtype)
 
-    weights = tf.Variable(w_init(batch_shape + [num_basis]), trainable=False)
+    weights = w_init(batch_shape + [num_basis])
     return BayesianLinearSampler(basis=basis,
                                  weights=weights,
                                  weight_initializer=w_init)
@@ -72,7 +72,7 @@ def _decoupled_sampler_gpr(model: gpflow.models.GPR,
       assert tuple(init.shape) == tuple(shape)
       return tf.cast(init, dtype)
 
-    weights = tf.Variable(w_init(shape=batch_shape + [m]), trainable=False)
+    weights = w_init(shape=batch_shape + [m])
     return BayesianLinearSampler(basis=basis,
                                  weights=weights,
                                  weight_initializer=w_init)
@@ -91,10 +91,16 @@ def _decoupled_sampler_svgp(model: gpflow.models.SVGP,
                             sample_shape: List[int],
                             num_basis: int,
                             prior_basis: Callable = None,
+                            mean_function: Callable = None,
                             latent_dim: int = 0,
                             dtype: Any = None):
   if dtype is None:
     dtype = default_float()
+
+  if mean_function == 'None':
+    mean_function = None  # skip mean function; used for, e.g, multioutput cases
+  elif mean_function is None:
+    mean_function = model.mean_function
 
   latent_kernel = slice_multioutput_kernel(model.kernel, latent_dim)
   def _create_prior_fn(batch_shape, basis: Callable = None):
@@ -106,22 +112,24 @@ def _decoupled_sampler_svgp(model: gpflow.models.SVGP,
     def w_init(shape, dtype=dtype):
       return tf.random.normal(shape=shape, dtype=dtype)
 
-    weights = tf.Variable(w_init(batch_shape + [num_basis]), trainable=False)
+    weights = w_init(batch_shape + [num_basis])
     return BayesianLinearSampler(basis=basis,
                                  weights=weights,
                                  weight_initializer=w_init)
 
   def _create_update_fn(batch_shape, prior_fn):
     Z = slice_multioutput_inducing(model.inducing_variable, latent_dim)
-    Suu = gpflow.covariances.Kuu(Z, latent_kernel, jitter=default_jitter())
-    Luu = tf.linalg.cholesky(Suu)
     basis = KernelBasis(kernel=latent_kernel, centers=Z)
 
     def w_init(shape, dtype=dtype):
       # Sample $u ~ N(f(Z), \epsilon)$ from the prior
-      prior_f = prior_fn(Z.Z)  # [!] improve me
+      prior_f = prior_fn(Z.Z)
       prior_u = prior_f + (default_jitter() ** 0.5) * \
                   tf.random.normal(prior_f.shape, dtype=prior_f.dtype)
+
+      # Compute matrix square root $Cov(u, u)^{1/2}$
+      Suu = gpflow.covariances.Kuu(Z, latent_kernel, jitter=default_jitter())
+      Luu = tf.linalg.cholesky(Suu)
 
       # Sample $u ~ N(q_mu, q_sqrt)$ from inducing distribution $q(u)$
       q_mu = model.q_mu[:, latent_dim: latent_dim + 1]  # Mx1
@@ -131,6 +139,7 @@ def _decoupled_sampler_svgp(model: gpflow.models.SVGP,
       if model.whiten:
         induced_u = Luu @ induced_u
 
+      # Solve for $Cov(u, u)^{-1} (u - f(Z))$
       init = tf.linalg.adjoint(parallel_solve(solver=tf.linalg.cholesky_solve,
                                               lhs=Luu,
                                               rhs=induced_u - prior_u))
@@ -138,7 +147,7 @@ def _decoupled_sampler_svgp(model: gpflow.models.SVGP,
       assert tuple(init.shape) == tuple(shape)
       return tf.cast(init, dtype)
 
-    weights = tf.Variable(w_init(shape=batch_shape + [len(Z)]), trainable=False)
+    weights = w_init(shape=batch_shape + [len(Z)])
     return BayesianLinearSampler(basis=basis,
                                  weights=weights,
                                  weight_initializer=w_init)
@@ -146,6 +155,7 @@ def _decoupled_sampler_svgp(model: gpflow.models.SVGP,
   batch_shape = list(sample_shape) + [1]
   prior_fn = _create_prior_fn(batch_shape, prior_basis)
   update_fn = _create_update_fn(batch_shape, prior_fn)
+
   return CompositeSampler(join_rule=sum,
                           samplers=[prior_fn, update_fn],
-                          mean_function=model.mean_function)
+                          mean_function=mean_function)

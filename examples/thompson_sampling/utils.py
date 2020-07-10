@@ -29,7 +29,7 @@ def take_along_axis(arr: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
   """
   _arr = tf.convert_to_tensor(arr)
   _idx = tf.convert_to_tensor(indices)
-  _axis = arr.shape.ndims + axis if (axis < 0) else axis
+  _axis = _arr.shape.ndims + axis if (axis < 0) else axis
 
   components = []
   for i, (size_a, size_i) in enumerate(zip(_arr.shape, _idx.shape)):
