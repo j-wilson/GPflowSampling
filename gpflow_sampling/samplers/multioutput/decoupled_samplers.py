@@ -72,6 +72,7 @@ def _decoupled_sample_svgp_lcm(model: gpflow.models.SVGP,
   for latent_dim in range(model.kernel.num_latent_gps):
     samplers.append(_decoupled_sampler_svgp(model=model,
                                             kernel=None,  # taken from the model
+                                            sample_shape=sample_shape,
                                             num_basis=num_basis,
                                             latent_dim=latent_dim,
                                             **kwargs))

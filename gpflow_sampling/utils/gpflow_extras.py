@@ -11,6 +11,7 @@ from gpflow.kernels import Kernel, \
                            MultioutputKernel, \
                            SeparateIndependent, \
                            SharedIndependent, \
+                           LinearCoregionalization, \
                            Matern52 as GPflowMatern52
 
 from gpflow.inducing_variables import InducingVariables, \
@@ -45,7 +46,7 @@ class Matern52(GPflowMatern52):
 
 @slice_multioutput_kernel.register(Kernel, int)
 def _getter(kernel, latent_dim):
-  assert not isinstance(MultioutputKernel)
+  assert not isinstance(kernel, MultioutputKernel)
   assert latent_dim == 0
   return kernel
 
@@ -60,6 +61,15 @@ def _getter(kernel, latent_dim):
 
 
 @slice_multioutput_kernel.register(SeparateIndependent, int)
+def _getter(kernel, latent_dim):
+  if latent_dim < 0:
+    latent_dim = kernel.num_latent_gps + latent_dim
+
+  assert kernel.num_latent_gps > latent_dim >= 0
+  return kernel.latent_kernels[latent_dim]
+
+
+@slice_multioutput_kernel.register(LinearCoregionalization, int)
 def _getter(kernel, latent_dim):
   if latent_dim < 0:
     latent_dim = kernel.num_latent_gps + latent_dim
