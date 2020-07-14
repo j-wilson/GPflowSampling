@@ -43,6 +43,28 @@ model = gpflow.model.SVGP(kernel=kernel, ...)
 sampler = decoupled(model, model.kernel, sample_shape=[...], num_basis=500)
 ```
 
+## Tips
+As a running example, assume that `model` is multioutput GP accepting 3-dimensional inputs and predicting 2-dimensional function values. For  `<decoupled>` and `<finite_fourier>` samplers, the following tips apply:
+- The third-to-last axis `axis=-3` acts as a batch axis for sample paths:
+    ```
+    sampler = decoupled(model, model.kernel, sample_shape=[32], num_basis=500
+    from_2d = sampler(inputs=tf.random.uniform([100, 3]))  # 32x100x2, broadcasted evaluation
+    from_3d = sampler(inputs=tf.random.uniform([32, 100, 3]))  # 32x100x2, pathwise evaluation
+    ```
+- We recommend use of custom mean functions, since GPflow's standard options do not broadcast --- which will cause pathwise evaluations like that of `from_3d` (above) to fail.
+- `sampler.reset_random_variables(reset_basis=True)` can be used to resample paths without recreating `<tf.Variable>`. This is useful when `model` may have changed (see [examples/training_via_sampling.ipynb](examples/training_via_sampling.ipynb)).
+- When generating samples in batches, typically use `sampler.reset_random_variables(reset_basis=False)`:
+    ```
+    a = []  # draws from a Gaussian distribution
+    b = []  # draws from a Gaussian mixture
+    x = tf.random.uniform([100, 3])
+    for _ in range(10):
+        sampler_a.reset_random_variables(reset_basis=False)
+        a.append(sampler_a(x))  # drawn from the same Gaussian 
+
+        sampler_b.reset_random_variables(reset_basis=True)
+        b.append(sampler_b(x))  # drawn from a new Gaussian
+    ```
 
 
 ## Citing Us

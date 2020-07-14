@@ -46,11 +46,11 @@ def _finite_fourier_gpr(model: gpflow.models.GPR,
                                  prior=prior,
                                  likelihood=model.likelihood)
 
-  X, y = model.data
-  if model.mean_function is not None:
-    y = y - model.mean_function(X)
-
   def initializer(shape, dtype):
+    X, y = model.data
+    if model.mean_function is not None:
+      y = y - model.mean_function(X)
+
     weights = blr.predict_w_samples(sample_shape=shape[:-1], data=(X, y))
     assert weights.shape[-1] == shape[-1] == basis.units
     return tf.cast(weights, dtype)
