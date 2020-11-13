@@ -72,7 +72,7 @@ def _cg_fallback(kern: kernels.Kernel,
   else:
     initializer = preconditioner.matvec(err)
 
-  # Approximately solve for $Cov(u, u)^{-1} (u - f(Z))$ using linear CG
+  # Approximately solve for $Cov(u, u)^{-1}(u - f(Z))$ using linear CG
   res = tf.linalg.experimental.conjugate_gradient(operator=operator,
                                                   rhs=err,
                                                   preconditioner=preconditioner,
@@ -136,7 +136,7 @@ def _cg_independent(kern: kernels.MultioutputKernel,
   else:
     initializer = preconditioner.matvec(err)
 
-  # Approximately solve for $Cov(u, u)^{-1} (u - f(Z))$ using linear CG
+  # Approximately solve for $Cov(u, u)^{-1}(u - f(Z))$ using linear CG
   res = tf.linalg.experimental.conjugate_gradient(operator=operator,
                                                   rhs=err,
                                                   preconditioner=preconditioner,

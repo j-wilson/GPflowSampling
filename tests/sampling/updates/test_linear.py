@@ -18,7 +18,7 @@ from gpflow_sampling.sampling.updates import linear as linear_update
 # ==============================================
 #                                    test_linear
 # ==============================================
-class UnitTestConfigDense(NamedTuple):
+class ConfigDense(NamedTuple):
   seed: int = 0
   floatx: Any = 'float64'
   jitter: float = 1e-6
@@ -39,7 +39,7 @@ class UnitTestConfigDense(NamedTuple):
     return 4 * (self.num_samples ** -0.5 + self.num_bases ** -0.5)
 
 
-def _test_linear_svgp(config: UnitTestConfigDense,
+def _test_linear_svgp(config: ConfigDense,
                       model: SVGP,
                       Xnew: tf.Tensor) -> tf.Tensor:
   """
@@ -75,7 +75,7 @@ def _test_linear_svgp(config: UnitTestConfigDense,
   return samples
 
 
-@common.test_update_sparse(default_config=UnitTestConfigDense())
+@common.test_update_sparse(default_config=ConfigDense())
 def test_linear_sparse(*args, **kwargs):
   f = _test_linear_svgp(*args, **kwargs)  # [S, N, 1]
   mf = tf.reduce_mean(f, axis=0)
@@ -84,7 +84,7 @@ def test_linear_sparse(*args, **kwargs):
   return mf, Sff
 
 
-@common.test_update_sparse_shared(default_config=UnitTestConfigDense())
+@common.test_update_sparse_shared(default_config=ConfigDense())
 def test_linear_sparse_shared(*args, **kwargs):
   f = _test_linear_svgp(*args, **kwargs)  # [S, N, L]
   mf = tf.reduce_mean(f, axis=0)
@@ -93,7 +93,7 @@ def test_linear_sparse_shared(*args, **kwargs):
   return mf, Sff
 
 
-@common.test_update_sparse_separate(default_config=UnitTestConfigDense())
+@common.test_update_sparse_separate(default_config=ConfigDense())
 def test_linear_sparse_separate(*args, **kwargs):
   f = _test_linear_svgp(*args, **kwargs)  # [S, N, L]
   mf = tf.reduce_mean(f, axis=0)

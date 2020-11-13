@@ -392,11 +392,6 @@ def test_update_conv2d(default_config: NamedTuple = None):
           # TODO: GPflow's SVGP class is not setup to support outputs defined
           #       as spatial feature maps. For now, we content ourselves with
           #       the following hack...
-          # mean_function = Conv2dMeanFunction(patch_shape=config.patch_shape,
-          #                                    channels_in=config.channels_in,
-          #                                    channels_out=config.num_latent_gps,
-          #                                    strides=config.strides,
-          #                                    padding=config.padding)
           const = tf.random.normal([config.num_latent_gps], dtype=floatx())
           mean_function = lambda x: const
 

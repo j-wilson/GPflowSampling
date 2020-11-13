@@ -50,7 +50,7 @@ def _exact_fallback(kern: kernels.Kernel,
     diag = tf.convert_to_tensor(diag, dtype=f.dtype)
   diag = tf.expand_dims(diag, axis=-1)  # [M, 1] or [1, 1] or [1]
 
-  # Compute error term and matrix square root $Cov(y, y)^{1/2}$
+  # Compute error term and matrix square root $Cov(u, u)^{1/2}$
   err = u - f  # [S, M, 1]
   err -= tf.sqrt(diag) * tf.random.normal(err.shape, dtype=err.dtype)
   if L is None:
@@ -61,7 +61,7 @@ def _exact_fallback(kern: kernels.Kernel,
     K = tf.linalg.set_diag(K, tf.linalg.diag_part(K) + diag[..., 0])
     L = tf.linalg.cholesky(K)
 
-  # Solve for $Cov(y, y)^{-1} (y - yhat)$
+  # Solve for $Cov(u, u)^{-1}(u - f(Z))$
   weights = tf.linalg.adjoint(tf.linalg.cholesky_solve(L, err))
   return DenseSampler(basis=basis, weights=weights, **kwargs)
 
@@ -106,7 +106,7 @@ def _exact_independent(kern: kernels.MultioutputKernel,
     K = tf.linalg.set_diag(K, tf.linalg.diag_part(K) + diag[..., 0])
     L = tf.linalg.cholesky(K)
 
-  # Solve for $Cov(u, u)^{-1} (u - f(Z))$ and return update functions
+  # Solve for $Cov(u, u)^{-1}(u - f(Z))$
   weights = move_axis(tf.linalg.cholesky_solve(L, err), -1, -3)  # [S, L, M]
   return MultioutputDenseSampler(basis=basis,
                                  weights=weights,

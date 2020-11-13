@@ -73,7 +73,7 @@ def _linear_fallback(Z: TensorLike,
   else:
     assert L.shape[-1] == min(M, D)  # TODO: improve me
 
-  # Solve for $Cov(u, u)^{-1} (f - u)$
+  # Solve for $Cov(u, u)^{-1}(u - f(Z))$
   if D < M:
     feat_iDiag = feat * tf.math.reciprocal(diag)
     weights = tf.linalg.adjoint(tf.linalg.cholesky_solve(L,
@@ -135,7 +135,7 @@ def _linear_multioutput(Z: inducing_variables.MultioutputInducingVariables,
   else:
     assert L.shape[-1] == min(M, D)  # TODO: improve me
 
-  # Solve for $Cov(u, u)^{-1} (f - u)$
+  # Solve for $Cov(u, u)^{-1}(u - f(Z))$
   if D < M:
     feat_iDiag = feat * tf.math.reciprocal(diag)
     weights = tf.linalg.adjoint(tf.linalg.cholesky_solve(L,
