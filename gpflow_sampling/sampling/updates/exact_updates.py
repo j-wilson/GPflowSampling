@@ -35,7 +35,10 @@ def _exact_fallback(kern: kernels.Kernel,
                     diag: TensorLike = None,
                     basis: AbstractBasis = None,
                     **kwargs):
-
+  """
+  Return pathwise updates of a prior processes $f$ subject to the
+  condition $p(f | u) = N(f | u, diag)$ on $f = f(Z)$.
+  """
   u_shape = tuple(u.shape)
   f_shape = tuple(f.shape)
   assert u_shape[-1] == 1, "Recieved multiple output features"
@@ -66,7 +69,9 @@ def _exact_fallback(kern: kernels.Kernel,
   return DenseSampler(basis=basis, weights=weights, **kwargs)
 
 
-@exact.register((kernels.SharedIndependent, kernels.SeparateIndependent),
+@exact.register((kernels.SharedIndependent,
+                 kernels.SeparateIndependent,
+                 kernels.LinearCoregionalization),
                 TensorLike,
                 TensorLike,
                 TensorLike)
@@ -80,7 +85,10 @@ def _exact_independent(kern: kernels.MultioutputKernel,
                        basis: AbstractBasis = None,
                        multioutput_axis: int = 0,
                        **kwargs):
-
+  """
+  Return (independent) pathwise updates for each of the latent prior processes
+  $f$ subject to the condition $p(f | u) = N(f | u, diag)$ on $f = f(Z)$.
+  """
   u_shape = tuple(u.shape)
   f_shape = tuple(f.shape)
   assert u_shape[-1] == kern.num_latent_gps, "Num. outputs != num. latent GPs"
@@ -121,24 +129,6 @@ def _exact_independent(kern: kernels.MultioutputKernel,
 def _exact_shared(kern, Z, u, f, *, multioutput_axis=None, **kwargs):
   """
   Edge-case where the multioutput axis gets suppressed.
-  """
-  return _exact_independent(kern,
-                            Z,
-                            u,
-                            f,
-                            multioutput_axis=multioutput_axis,
-                            **kwargs)
-
-
-@exact.register(kernels.LinearCoregionalization,
-                inducing_variables.MultioutputInducingVariables,
-                TensorLike,
-                TensorLike)
-def _exact_lcm(kern, Z, u, f, *, multioutput_axis=None, **kwargs):
-  """
-  Return independent updates for each of the latent processes $f$, where the
-  condition $f = u$ is to be imposed on $f = f(Z)$. For further details, see
-  <gpflow_sampling.sampling.decoupled_samplers>.
   """
   return _exact_independent(kern,
                             Z,
